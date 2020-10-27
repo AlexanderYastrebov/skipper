@@ -157,6 +157,7 @@ func MakeRegistry() filters.Registry {
 		ratelimit.NewClusterRateLimit(),
 		ratelimit.NewClusterClientRateLimit(),
 		ratelimit.NewDisableRatelimit(),
+		ratelimit.NewLeakyBucket(),
 		script.NewLuaScript(),
 		cors.NewOrigin(),
 		logfilter.NewUnverifiedAuditLog(),

@@ -32,6 +32,7 @@ import (
 	"github.com/zalando/skipper/filters/builtin"
 	"github.com/zalando/skipper/filters/fadein"
 	logfilter "github.com/zalando/skipper/filters/log"
+	ratelimitfilters "github.com/zalando/skipper/filters/ratelimit"
 	"github.com/zalando/skipper/innkeeper"
 	"github.com/zalando/skipper/loadbalancer"
 	"github.com/zalando/skipper/logging"
@@ -1201,6 +1202,8 @@ func run(o Options, sig chan os.Signal, idleConnsCH chan struct{}) error {
 	if o.DefaultFilters != nil {
 		ro.PreProcessors = []routing.PreProcessor{o.DefaultFilters}
 	}
+	ro.PreProcessors = append(ro.PreProcessors, ratelimitfilters.NewLeakyBucketPreProcessor())
+
 	routing := routing.New(ro)
 	defer routing.Close()
 
