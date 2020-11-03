@@ -1317,6 +1317,11 @@ func run(o Options, sig chan os.Signal, idleConnsCH chan struct{}) error {
 		)
 	}
 
+	redisRateLimits := ratelimitRegistry != nil && redisOptions != nil
+	if redisRateLimits {
+		o.CustomFilters = append(o.CustomFilters, ratelimitfilters.NewLeakyBucket(ratelimitRegistry))
+	}
+
 	// create a filter registry with the available filter specs registered,
 	// and register the custom filters
 	registry := builtin.MakeRegistry()
@@ -1402,6 +1407,10 @@ func run(o Options, sig chan os.Signal, idleConnsCH chan struct{}) error {
 
 	if o.EnableOAuth2GrantFlow /* explicitly enable grant flow when callback route was not disabled */ {
 		ro.PreProcessors = append(ro.PreProcessors, oauthConfig.NewGrantPreprocessor())
+	}
+
+	if redisRateLimits {
+		ro.PreProcessors = append(ro.PreProcessors, ratelimitfilters.NewLeakyBucketPreProcessor())
 	}
 
 	routing := routing.New(ro)
