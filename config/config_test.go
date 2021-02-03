@@ -15,8 +15,6 @@ import (
 // Move configuration init here to avoid race conditions when parsing flags in multiple tests
 var cfg = NewConfig()
 
-var redisPasswordEnv = "SWARM_REDIS_PASSWORD"
-
 func Test_NewConfig(t *testing.T) {
 	for _, tt := range []struct {
 		name    string
@@ -185,7 +183,7 @@ func TestMinTLSVersion(t *testing.T) {
 	})
 }
 
-func TestEnvOverrides_SwarmRedisPassword(t *testing.T) {
+func TestSwarmRedisPassword(t *testing.T) {
 	for _, tt := range []struct {
 		name string
 		args []string
@@ -204,12 +202,25 @@ func TestEnvOverrides_SwarmRedisPassword(t *testing.T) {
 			env:  "",
 			want: "",
 		},
+		{
+			name: "set redis password from config",
+			args: []string{"skipper", "-config-file=redis-password.yaml"},
+			env:  "",
+			want: "password from config",
+		},
+		{
+			name: "redis password from config overrides env",
+			args: []string{"skipper", "-config-file=redis-password.yaml"},
+			env:  "password from env",
+			want: "password from config",
+		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			oldArgs := os.Args
 			defer func() {
 				os.Args = oldArgs
 				os.Unsetenv(redisPasswordEnv)
+				cfg.SwarmRedisPassword = ""
 			}()
 			os.Args = tt.args
 			if tt.env != "" {

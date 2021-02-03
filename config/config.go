@@ -208,8 +208,8 @@ type Config struct {
 	// swarm:
 	EnableSwarm bool `yaml:"enable-swarm"`
 	// redis based
-	SwarmRedisURLs         *listFlag `yaml:"swarm-redis-urls"`
-	SwarmRedisPassword     string
+	SwarmRedisURLs         *listFlag     `yaml:"swarm-redis-urls"`
+	SwarmRedisPassword     string        `yaml:"swarm-redis-password"`
 	SwarmRedisDialTimeout  time.Duration `yaml:"swarm-redis-dial-timeout"`
 	SwarmRedisReadTimeout  time.Duration `yaml:"swarm-redis-read-timeout"`
 	SwarmRedisWriteTimeout time.Duration `yaml:"swarm-redis-write-timeout"`
@@ -229,6 +229,7 @@ type Config struct {
 
 const (
 	// generic:
+	redisPasswordEnv                       = "SWARM_REDIS_PASSWORD"
 	defaultAddress                         = ":9090"
 	defaultExpectedBytesPerRequest         = 50 * 1024 // 50kB
 	defaultEtcdPrefix                      = "/skipper"
@@ -445,7 +446,7 @@ const (
 	swarmPortUsage                         = "swarm port to use to communicate with our peers"
 	swarmMaxMessageBufferUsage             = "swarm max message buffer size to use for member list messages"
 	swarmLeaveTimeoutUsage                 = "swarm leave timeout to use for leaving the memberlist on timeout"
-	swarmRedisURLsUsage                    = "Redis URLs as comma separated list, used for building a swarm, for example in redis based cluster ratelimits"
+	swarmRedisURLsUsage                    = "Redis URLs as comma separated list, used for building a swarm, for example in redis based cluster ratelimits.\nUse " + redisPasswordEnv + " environment variable or 'swarm-redis-password' key in config file to set redis password"
 	swarmStaticSelfUsage                   = "set static swarm self node, for example 127.0.0.1:9001"
 	swarmStaticOtherUsage                  = "set static swarm all nodes, for example 127.0.0.1:9002,127.0.0.1:9003"
 	swarmRedisDialTimeoutUsage             = "set redis client dial timeout"
@@ -737,7 +738,10 @@ func (c *Config) Parse() error {
 		c.Certificates = certificates
 	}
 
-	c.parseEnv()
+	if c.SwarmRedisPassword == "" {
+		c.SwarmRedisPassword = os.Getenv(redisPasswordEnv)
+	}
+
 	return nil
 }
 
@@ -999,9 +1003,4 @@ func (c *Config) parseHistogramBuckets() ([]float64, error) {
 	}
 	sort.Float64s(result)
 	return result, nil
-}
-
-func (c *Config) parseEnv() {
-	// Redis password
-	c.SwarmRedisPassword = os.Getenv("SWARM_REDIS_PASSWORD")
 }
